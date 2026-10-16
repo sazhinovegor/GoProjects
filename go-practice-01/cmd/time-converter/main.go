@@ -5,7 +5,6 @@ import "fmt"
 func main() {
 	var minutes int
 	_, err := fmt.Scan(&minutes)
-	}
 	if minutes < 0 {
 		fmt.Println("Ошибка! Введите, пожалуйста, положительное число.")
 		return
@@ -14,7 +13,7 @@ func main() {
 		fmt.Println("Ошибка! Введите, пожалуйста, целое значение.")
 		return
 	}
-	
+
 	var hour int = minutes / 60
 	var ostminutes int = minutes - 60*hour
 
