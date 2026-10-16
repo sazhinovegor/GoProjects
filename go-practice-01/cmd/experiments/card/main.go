@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func main() {
-	var name string = "Егор"
+	const name = "Егор"
 	var group string = "ЭФБО-07-26"
 	var course string = "Бэкенд-разработка на языке Go"
 	var countEnd int = 1
