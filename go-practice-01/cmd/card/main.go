@@ -8,7 +8,7 @@ func main() {
 	var course string = "Бэкенд-разработка на языке Go"
 	var countEnd int = 1
 	var interested bool = true
-	fmt.Println("Участник: ",name)
+	fmt.Println("Участник: ", name)
 	fmt.Println("Группа:", group)
 	fmt.Println("Курс", course)
 	fmt.Println("Завершено работ:", countEnd)
