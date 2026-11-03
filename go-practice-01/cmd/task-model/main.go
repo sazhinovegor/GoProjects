@@ -29,38 +29,49 @@ func (t *Task) SetPriority(priority int) bool {
 }
 
 func findTaskByID(tasks []Task, id int) *Task {
-	// TODO: верните &tasks[i] при совпадении, иначе nil.
+	for i := range tasks {
+		if tasks[i].ID == id {
+			return &tasks[i]
+		}
+	}
 	return nil
 }
 
 func main() {
-	taskFirst := Task{ID: 1, Title: "Изучить GO", Status: "New", Priority: 2}
-	taskSecond := Task{ID:2, Title: "Прийти домой", Status: "Old", Priority: 1}
-	taskThird := Task{ID:3, Title: "Вкусно покушать", Status:"New",Priority: 1}
-	fmt.Println(taskFirst)
-	fmt.Println(taskSecond)
-	fmt.Println(taskThird)
-	ptr := &taskFirst
-	ptr.Priority = 3
-	fmt.Println(taskFirst.Priority)
 	tasks := []Task{
 		{ID: 1, Title: "Установить Go", Status: "done", Priority: 1},
 		{ID: 2, Title: "Освоить функции", Status: "in_progress", Priority: 2},
 		{ID: 3, Title: "Изучить структуры", Status: "new", Priority: 3},
 	}
-
-	// TODO: найдите ID=2, завершите и установите приоритет 3.
-	// TODO: посчитайте завершённые задачи.
 		for i := range tasks {
 		if tasks[i].ID == 2 {
 			tasks[i].Complete()
 		}
 	}
+
+	if found := findTaskByID(tasks, 1); found != nil {
+		found.Complete()
+		found.SetPriority(3)
+	}
+	completed := 0
 	
 	for _, task := range tasks {
 		fmt.Println(task.Summary())
+		if task.Status == "done" {
+			completed++
+		}
 	}
+	fmt.Printf("Задач завершено: %d\n", completed)
+
+
 	if findTaskByID(tasks, 99) == nil {
 		fmt.Println("Задача не найдена")
 	}
+
+	found := findTaskByID(tasks,2)
+	if found != nil {
+		found.Complete()
+	} 
+
+
 }
