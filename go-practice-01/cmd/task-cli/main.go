@@ -17,7 +17,7 @@ var (
 type Task struct {
 	ID       int
 	Title    string
-	Status   string
+	Status   string 
 	Priority int
 }
 
@@ -34,32 +34,64 @@ type MemoryStore struct {
 	nextID int
 }
 
-func NewMemoryStore() *MemoryStore { return &MemoryStore{nextID: 1} }
+func NewMemoryStore() *MemoryStore {
+	return &MemoryStore{nextID: 1}
+}
 
 func (s *MemoryStore) Add(title string, priority int) (Task, error) {
-	// TODO: проверьте строку и приоритет, добавьте Task, увеличьте nextID.
-	return Task{}, ErrInvalid
+	if strings.TrimSpace(title) == "" {
+		return Task{}, fmt.Errorf("пустое название: %w", ErrInvalid)
+	}
+	if priority < 1 || priority > 3 {
+		return Task{}, fmt.Errorf("приоритет %d вне диапазона 1–3: %w", priority, ErrInvalid)
+	}
+	task := Task{
+		ID:       s.nextID,
+		Title:    title,
+		Status:   "new",
+		Priority: priority,
+	}
+	s.tasks = append(s.tasks, task)
+	s.nextID++
+	return task, nil
 }
 
 func (s *MemoryStore) Get(id int) (Task, error) {
-	// TODO: найдите задачу или верните ошибку через %w.
+	for _, task := range s.tasks {
+		if task.ID == id {
+			return task, nil
+		}
+	}
 	return Task{}, fmt.Errorf("id %d: %w", id, ErrNotFound)
 }
 
 func (s *MemoryStore) Complete(id int) error {
-	// TODO: изменяйте s.tasks[i], а не копию.
-	return ErrNotFound
+	for i := range s.tasks {
+		if s.tasks[i].ID == id {
+			s.tasks[i].Status = "done" // изменяем элемент по индексу, а не копию
+			return nil
+		}
+	}
+	return fmt.Errorf("id %d: %w", id, ErrNotFound)
 }
 
 func (s *MemoryStore) Delete(id int) error {
-	// TODO: удалите задачу по индексу.
-	return ErrNotFound
+	for i := range s.tasks {
+		if s.tasks[i].ID == id {
+			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("id %d: %w", id, ErrNotFound)
 }
 
 func (s *MemoryStore) List() []Task {
-	// TODO: верните копию среза.
-	return nil
+	out := make([]Task, len(s.tasks))
+	copy(out, s.tasks)
+	return out
 }
+
+
 
 func readLine(scanner *bufio.Scanner, prompt string) (string, bool) {
 	fmt.Print(prompt)
@@ -79,37 +111,106 @@ func report(err error) {
 	}
 }
 
+
+func filterByStatus(tasks []Task, status string) []Task {
+	var result []Task
+	for _, t := range tasks {
+		if t.Status == status {
+			result = append(result, t)
+		}
+	}
+	return result
+}
+
+
 func run(store TaskStore, scanner *bufio.Scanner) {
 	defer fmt.Println("Работа приложения завершена")
+
 	for {
-		fmt.Println("\n1 — добавить | 2 — список | 3 — завершить | 4 — удалить | 0 — выход")
+		fmt.Println("\n1 — добавить | 2 — список | 3 — завершить | 4 — удалить | 5 — поиск по ID | 6 — фильтр по статусу | 0 — выход")
 		cmd, ok := readLine(scanner, "> ")
 		if !ok || cmd == "0" {
 			return
 		}
+
 		switch cmd {
-		case "1":
+		case "1": 
 			title, ok := readLine(scanner, "Название: ")
-			if !ok { return }
+			if !ok {
+				return
+			}
 			raw, ok := readLine(scanner, "Приоритет (1–3): ")
-			if !ok { return }
+			if !ok {
+				return
+			}
 			priority, err := strconv.Atoi(raw)
-			if err != nil { fmt.Println("Введите число"); continue }
+			if err != nil {
+				fmt.Println("Введите число")
+				continue
+			}
 			task, err := store.Add(title, priority)
-			if err != nil { report(err); continue }
+			if err != nil {
+				report(err)
+				continue
+			}
 			fmt.Printf("Создана задача #%d\n", task.ID)
-		case "2":
+
+		case "2": 
 			for _, task := range store.List() {
 				fmt.Printf("#%d %s [%s], приоритет %d\n", task.ID, task.Title, task.Status, task.Priority)
 			}
-		case "3", "4":
+
+		case "3", "4": 
 			raw, ok := readLine(scanner, "ID: ")
-			if !ok { return }
+			if !ok {
+				return
+			}
 			id, err := strconv.Atoi(raw)
-			if err != nil { fmt.Println("Введите число"); continue }
-			if cmd == "3" { err = store.Complete(id) } else { err = store.Delete(id) }
+			if err != nil {
+				fmt.Println("Введите число")
+				continue
+			}
+			if cmd == "3" {
+				err = store.Complete(id)
+			} else {
+				err = store.Delete(id)
+			}
 			report(err)
-			if err == nil { fmt.Println("Готово") }
+			if err == nil {
+				fmt.Println("Готово")
+			}
+
+		case "5": 
+			raw, ok := readLine(scanner, "ID для поиска: ")
+			if !ok {
+				return
+			}
+			id, err := strconv.Atoi(raw)
+			if err != nil {
+				fmt.Println("Введите число")
+				continue
+			}
+			task, err := store.Get(id)
+			if err != nil {
+				report(err)
+				continue
+			}
+			fmt.Printf("Найдено: #%d %s [%s], приоритет %d\n", task.ID, task.Title, task.Status, task.Priority)
+
+		case "6": 
+			status, ok := readLine(scanner, "Статус (new/done): ")
+			if !ok {
+				return
+			}
+			filtered := filterByStatus(store.List(), status)
+			if len(filtered) == 0 {
+				fmt.Println("Задач с таким статусом нет")
+				continue
+			}
+			for _, task := range filtered {
+				fmt.Printf("#%d %s [%s], приоритет %d\n", task.ID, task.Title, task.Status, task.Priority)
+			}
+
 		default:
 			fmt.Println("Неизвестная команда")
 		}
@@ -117,5 +218,11 @@ func run(store TaskStore, scanner *bufio.Scanner) {
 }
 
 func main() {
-	run(NewMemoryStore(), bufio.NewScanner(os.Stdin))
+	
+	store := NewMemoryStore()
+	if _, err := store.Get(999); errors.Is(err, ErrNotFound) {
+		fmt.Println("Проверка Get(999): errors.Is работает корректно")
+	}
+
+	run(store, bufio.NewScanner(os.Stdin))
 }
